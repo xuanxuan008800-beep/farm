@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>TG农场收菜闹钟</title>
+
+<style>
+
+body {
+    font-family: Arial;
+    background: #f2f6f2;
+    padding: 20px;
+    transition: 0.3s;
+    color: #111;
+}
+
+h2 { text-align: center; }
+
+.time-bar {
+    text-align: center;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* 搜索 */
+#search {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* 卡片 */
+.card {
+    background: white;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+/* 输入 */
+input {
+    padding: 6px;
+    margin: 3px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* 按钮 */
+button {
+    padding: 6px 10px;
+    border: none;
+    background: #28a745;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 3px;
+}
+
+button.del { background:#dc3545; }
+
+/* 夜间模式 */
+body.dark {
+    background: #0f1115;
+    color: #e6e6e6;
+}
+
+body.dark .card {
+    background: #1b1f2a;
+    color: #e6e6e6;
+}
+
+body.dark input {
+    background: #2a2f3a;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🌾 TG农场收菜闹钟</h2>
+
+<div class="time-bar">
+    🇨🇳 北京时间：<span id="bjtime"></span>
+</div>
+
+<!-- 🔍 搜索 -->
+<input id="search" placeholder="🔍 搜索玩家..." oninput="render()">
+
+<!-- 添加区域 -->
+<div class="card">
+
+    👤 玩家：
+    <input id="name" placeholder="名字">
+
+    🌱 植物：
+    <input id="plant" placeholder="玉米/西瓜">
+
+    ⏱ 小时：
+    <input id="hour" type="number" value="0">
+
+    ⏱ 分钟：
+    <input id="minute" type="number" value="0">
+
+    <!-- ⏱ 添加计时 -->
+    <button onclick="addPlayer()">⏱ 添加计时</button>
+
+    <!-- 🌙 夜间模式（已移动到这里） -->
+    <button onclick="toggleDark()">🌙 夜间模式</button>
+
+</div>
+
+<!-- 列表 -->
+<div id="list"></div>
+
+<script>
+
+let players = [];
+
+/* 夜间模式 */
+function toggleDark(){
+    document.body.classList.toggle("dark");
+}
+
+/* 北京时间 */
+function updateBJTime(){
+    let now = new Date();
+    document.getElementById("bjtime").innerText =
+        new Date(now.getTime()+8*3600*1000)
+        .toISOString().replace("T"," ").substring(0,19);
+}
+
+/* 添加 */
+function addPlayer(){
+    let nameEl = document.getElementById("name");
+    let plantEl = document.getElementById("plant");
+    let hourEl = document.getElementById("hour");
+    let minuteEl = document.getElementById("minute");
+
+    let name = nameEl.value;
+    let plant = plantEl.value;
+    let h = parseInt(hourEl.value)||0;
+    let m = parseInt(minuteEl.value)||0;
+
+    if(!name || !plant) return alert("填写完整");
+
+    players.push({
+        name,
+        plant,
+        start: Date.now()/1000,
+        grow: h*3600 + m*60
+    });
+
+    // 清空输入
+    nameEl.value = "";
+    plantEl.value = "";
+    hourEl.value = 0;
+    minuteEl.value = 0;
+
+    render();
+}
+
+/* 删除 */
+function removePlayer(i){
+    players.splice(i,1);
+    render();
+}
+
+/* 重置 */
+function reset(i){
+    players[i].start = Date.now()/1000;
+    render();
+}
+
+/* 修改时间（prompt版未改） */
+function editTime(i){
+    let h = prompt("小时") || 0;
+    let m = prompt("分钟") || 0;
+
+    players[i].grow = parseInt(h)*3600 + parseInt(m)*60;
+    players[i].start = Date.now()/1000;
+
+    render();
+}
+
+/* 搜索 */
+function filter(list){
+    let key = document.getElementById("search").value.toLowerCase();
+    return list.filter(p =>
+        p.name.toLowerCase().includes(key)
+    );
+}
+
+/* 渲染 */
+function render(){
+    let box = document.getElementById("list");
+    box.innerHTML = "";
+
+    let now = Date.now()/1000;
+
+    filter(players).forEach((p,i)=>{
+
+        let diff = p.start + p.grow - now;
+
+        box.innerHTML += `
+        <div class="card">
+            👤 ${p.name} ｜ 🌱 ${p.plant}<br>
+            ⏰ ${diff<=0 ? "🟢 已成熟" :
+                Math.floor(diff/3600)+"h "+Math.floor(diff%3600/60)+"m "+Math.floor(diff%60)+"s"}
+            <br><br>
+
+            <button onclick="reset(${i})">重置</button>
+            <button onclick="editTime(${i})">修改时间</button>
+            <button class="del" onclick="removePlayer(${i})">删除</button>
+        </div>
+        `;
+    });
+}
+
+setInterval(()=>{
+    render();
+    updateBJTime();
+},1000);
+
+updateBJTime();
+render();
+
+</script>
+
+</body>
+</html>

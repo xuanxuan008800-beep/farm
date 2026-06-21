@@ -1,0 +1,8 @@
+{
+  "name": "TG农场收菜闹钟",
+  "short_name": "农场闹钟",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f6f2",
+  "theme_color": "#28a745"
+}
